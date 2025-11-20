@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Dodge the Balls</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background: #f0f7ff;
+        font-family: Arial;
+      }
+      canvas {
+        border: 2px solid #444;
+        background: #fff;
+      }
+      .hint {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hint">Use ← → to move — Survive & score points!</div>
+    <canvas id="game" width="480" height="640"></canvas>
+    <script>
+      const canvas = document.getElementById("game"),
+        ctx = canvas.getContext("2d");
+      let player = {
+        x: canvas.width / 2,
+        y: canvas.height - 40,
+        r: 20,
+        speed: 6,
+      };
+      let bullets = [],
+        spawnRate = 850,
+        score = 0,
+        over = false;
+      let left = false,
+        right = false;
+
+      setInterval(() => {
+        bullets.push({
+          x: Math.random() * (canvas.width - 30) + 15,
+          y: -10,
+          r: 10 + Math.random() * 15,
+          vy: 2 + Math.random() * 2,
+        });
+      }, spawnRate);
+
+      document.addEventListener("keydown", (e) => {
+        if (e.code === "ArrowLeft") left = true;
+        if (e.code === "ArrowRight") right = true;
+        if (e.key.toLowerCase() === "r" && over) {
+          reset();
+        }
+      });
+      document.addEventListener("keyup", (e) => {
+        if (e.code === "ArrowLeft") left = false;
+        if (e.code === "ArrowRight") right = false;
+      });
+
+      function update() {
+        if (over) return draw();
+        if (left) player.x -= player.speed;
+        if (right) player.x += player.speed;
+        player.x = Math.max(
+          player.r,
+          Math.min(canvas.width - player.r, player.x)
+        );
+
+        for (let i = bullets.length - 1; i >= 0; i--) {
+          let b = bullets[i];
+          b.y += b.vy;
+          if (b.y - b.r > canvas.height) {
+            bullets.splice(i, 1);
+            score++;
+          }
+          // collision
+          let dx = b.x - player.x,
+            dy = b.y - player.y;
+          if (Math.hypot(dx, dy) < b.r + player.r) {
+            over = true;
+          }
+        }
+        draw();
+        requestAnimationFrame(update);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0077cc";
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+        ctx.fill();
+        for (let b of bullets) {
+          ctx.fillStyle = "#ff4d4f";
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = "#222";
+        ctx.font = "20px Arial";
+        ctx.fillText("Score: " + score, 10, 30);
+        if (over) {
+          ctx.fillStyle = "rgba(0,0,0,0.6)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "#fff";
+          ctx.font = "24px Arial";
+          ctx.fillText("Game Over — Press R to restart", 40, canvas.height / 2);
+        }
+      }
+
+      function reset() {
+        bullets = [];
+        score = 0;
+        over = false;
+        player.x = canvas.width / 2;
+      }
+      requestAnimationFrame(update);
+    </script>
+  </body>
+</html>

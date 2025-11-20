@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Advanced Browser Chatbot — Demo</title>
+    <style>
+      :root {
+        --bg: #eef2f7;
+        --card: #ffffff;
+        --accent: #0b5fff;
+        --accent-2: #00b894;
+        --text: #0f1724;
+        --muted: #6b7280;
+        --bot: #e6eefc;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+          Roboto, "Helvetica Neue", Arial;
+        background: var(--bg);
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      .wrap {
+        width: 960px;
+        max-width: 98%;
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 18px;
+        padding: 20px;
+      }
+      .panel {
+        background: var(--card);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(12, 20, 36, 0.08);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .left {
+        padding: 18px;
+        min-height: 520px;
+      }
+      .right {
+        min-height: 520px;
+      }
+      h2 {
+        margin: 0 0 10px 0;
+        font-size: 18px;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      select,
+      button {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #e6e9ef;
+        background: #fff;
+        cursor: pointer;
+      }
+      button.primary {
+        background: var(--accent);
+        color: white;
+        border: none;
+      }
+      .small {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .messages {
+        flex: 1;
+        padding: 18px;
+        overflow: auto;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.4),
+          rgba(255, 255, 255, 0.2)
+        );
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .msg {
+        max-width: 76%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        line-height: 1.3;
+        position: relative;
+        word-wrap: break-word;
+      }
+      .user {
+        align-self: flex-end;
+        background: linear-gradient(90deg, #3bd6a3, #0aa7d9);
+        color: white;
+        border-bottom-right-radius: 2px;
+      }
+      .bot {
+        align-self: flex-start;
+        background: var(--bot);
+        color: var(--text);
+      }
+      .meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .input-area {
+        display: flex;
+        gap: 8px;
+        padding: 12px;
+        border-top: 1px solid #f1f3f5;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.9),
+          rgba(255, 255, 255, 0.95)
+        );
+      }
+      input#text {
+        flex: 1;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #e6e9ef;
+        outline: none;
+      }
+      button#send {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: none;
+        background: var(--accent);
+        color: white;
+      }
+      .typing {
+        font-style: italic;
+        color: var(--muted);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .typing .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--muted);
+        opacity: 0.2;
+        animation: blink 1s infinite;
+      }
+      .typing .dot:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+      .typing .dot:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 1;
+        }
+      }
+      .reactions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .reaction {
+        padding: 6px 8px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.03);
+        cursor: pointer;
+        border: 1px solid transparent;
+      }
+      .reaction:hover {
+        transform: translateY(-2px);
+      }
+      .control-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .logo {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .logo .dot {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--accent);
+        display: inline-block;
+      }
+      .mem {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+      .footer-note {
+        font-size: 13px;
+        color: var(--muted);
+        text-align: center;
+        padding: 8px;
+      }
+      /* corporate theme */
+      .theme-corp {
+        --bg: #f3f6fb;
+        --card: #ffffff;
+        --accent: #0b5fff;
+        --accent-2: #00b894;
+        --text: #06263b;
+        --muted: #6b7280;
+        --bot: #eef7ff;
+      }
+      .theme-dark {
+        --bg: #0b1220;
+        --card: #0f1724;
+        --text: #e6eefc;
+        --muted: #9aa4b2;
+        --accent: #7c3aed;
+        --bot: #081024;
+      }
+      .personality-badge {
+        padding: 6px 8px;
+        border-radius: 999px;
+        background: rgba(11, 95, 255, 0.08);
+        border: 1px solid rgba(11, 95, 255, 0.12);
+        font-size: 13px;
+        color: var(--accent);
+      }
+      .top-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .copy-btn {
+        background: #f6f7fb;
+        border: 1px solid #e7ebff;
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap" id="app">
+      <div class="panel left theme-corp" id="leftPanel">
+        <div class="logo">
+          <div class="dot"></div>
+          <div>
+            <h2>BrowserBot — Demo</h2>
+            <div class="small">Interactive demo for Knowledge Café</div>
+          </div>
+        </div>
+
+        <div class="controls" style="margin-top: 12px">
+          <label class="small">Theme</label>
+          <select id="themeSelect">
+            <option value="corp">Corporate (default)</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+
+          <label class="small">Personality</label>
+          <select id="personality">
+            <option value="fun">Fun</option>
+            <option value="sarcastic">Sarcastic</option>
+            <option value="formal">Formal</option>
+            <option value="geeky">Geeky</option>
+          </select>
+        </div>
+
+        <div class="control-row">
+          <div>
+            <button id="clearMemory">Clear Memory</button>
+            <button id="exportChat" class="copy-btn">Copy Chat</button>
+          </div>
+          <div class="personality-badge" id="modeBadge">Mode: Fun</div>
+        </div>
+
+        <div class="small" style="margin-top: 8px">
+          Context Memory (last 10 exchanges):
+        </div>
+        <div class="mem" id="memoryView">
+          No memory yet — chat to create memory.
+        </div>
+
+        <div style="margin-top: auto; margin-bottom: 6px">
+          <div class="small">Tips</div>
+          <ul style="padding-left: 18px; margin: 6px 0 0 0">
+            <li style="margin-bottom: 6px">
+              Try: “Tell me a quick joke about meetings.”
+            </li>
+            <li style="margin-bottom: 6px">
+              Ask the bot to “remember” something: e.g., “Remember: I love
+              chai.”
+            </li>
+            <li>Switch personalities and see different tones.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel right" id="rightPanel">
+        <div
+          style="
+            padding: 12px;
+            border-bottom: 1px solid #f1f3f5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; gap: 12px; align-items: center">
+            <strong>Chat</strong>
+            <span class="small" id="statusNote"
+              >You are in <strong>Fun</strong> mode.</span
+            >
+          </div>
+          <div class="small">Demo — No server, all in browser</div>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="input-area">
+          <input id="text" placeholder="Type a message — press Enter to send" />
+          <button id="send">Send</button>
+        </div>
+        <div class="footer-note">
+          Emoji reactions: click any emoji under a message. Bot may add
+          reactions too.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* ---- Simple conversational engine with contextual memory + personalities ---- */
+
+      const MAX_MEMORY = 10;
+      const messagesEl = document.getElementById("messages");
+      const textEl = document.getElementById("text");
+      const sendBtn = document.getElementById("send");
+      const personalityEl = document.getElementById("personality");
+      const memoryView = document.getElementById("memoryView");
+      const clearMemoryBtn = document.getElementById("clearMemory");
+      const exportChatBtn = document.getElementById("exportChat");
+      const themeSelect = document.getElementById("themeSelect");
+      const modeBadge = document.getElementById("modeBadge");
+      const statusNote = document.getElementById("statusNote");
+      const leftPanel = document.getElementById("leftPanel");
+
+      /* load memory from localStorage */
+      let memory = JSON.parse(
+        localStorage.getItem("browserbot_memory") || "[]"
+      ); // array of {role, text, ts}
+      let chatHistory = JSON.parse(
+        localStorage.getItem("browserbot_chat") || "[]"
+      ); // entire chat to export
+      let currentPersonality = personalityEl.value;
+
+      /* personalities: provide tone and phrases */
+      const PERSONALITIES = {
+        fun: {
+          label: "Fun",
+          prefix: (s) => s + " 😄",
+          replies: [
+            "Nice! Here's a fun thought:",
+            "Haha — love that!",
+            "Oh wow, tell me more!",
+            "Let's make this playful.",
+          ],
+          reactPool: ["👍", "😂", "🎉", "🔥", "🤩"],
+        },
+        sarcastic: {
+          label: "Sarcastic",
+          prefix: (s) => s + " 🙃",
+          replies: [
+            "Oh sure, because that makes everything better.",
+            "Hard to argue with that... not.",
+            "Right — as if I wasn't busy doing nothing.",
+            "Cool. Very cool.",
+          ],
+          reactPool: ["😏", "🙄", "🤨", "😅"],
+        },
+        formal: {
+          label: "Formal",
+          prefix: (s) => "Certainly. " + s,
+          replies: [
+            "Understood. I will note that.",
+            "Thank you for the clarification.",
+            "I can assist further if needed.",
+            "Acknowledged.",
+          ],
+          reactPool: ["✅", "👍", "📝", "👌"],
+        },
+        geeky: {
+          label: "Geeky",
+          prefix: (s) => s + " 🤓",
+          replies: [
+            "Interesting — that triggers a cascade!",
+            "I ran a quick thought experiment on that.",
+            "Careful, that might cause a stack overflow of ideas.",
+            "Fun fact: I once debugged a sentient toaster.",
+          ],
+          reactPool: ["🧠", "🔧", "💾", "⚙️"],
+        },
+      };
+
+      /* utility: save memory and chat persistently */
+      function saveState() {
+        localStorage.setItem("browserbot_memory", JSON.stringify(memory));
+        localStorage.setItem("browserbot_chat", JSON.stringify(chatHistory));
+        renderMemory();
+      }
+
+      /* show memory in left panel */
+      function renderMemory() {
+        if (memory.length === 0) {
+          memoryView.innerText = "No memory yet — chat to create memory.";
+          return;
+        }
+        memoryView.innerHTML = memory
+          .slice()
+          .reverse()
+          .map(
+            (m) =>
+              `<div><strong>${m.role}:</strong> ${escapeHtml(m.text)}</div>`
+          )
+          .join("");
+      }
+
+      /* escape for safety when injecting */
+      function escapeHtml(s) {
+        return String(s)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+      }
+
+      /* append a message DOM with optional reactions */
+      function appendMessage(role, text, options = {}) {
+        const wrap = document.createElement("div");
+        wrap.className = "msg " + (role === "user" ? "user" : "bot");
+        wrap.innerHTML = `<div>${escapeHtml(text)}</div>`;
+        messagesEl.appendChild(wrap);
+
+        // meta + reactions area
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        const ts = new Date().toLocaleTimeString();
+        meta.innerHTML = `<span>${ts}</span>`;
+        wrap.appendChild(meta);
+
+        // reactions under every message (click to add reaction)
+        const reactions = document.createElement("div");
+        reactions.className = "reactions";
+        const emojis = ["👍", "😂", "❤️", "🎉", "😮"];
+        emojis.forEach((e) => {
+          const b = document.createElement("button");
+          b.className = "reaction";
+          b.innerText = e;
+          b.title = "React";
+          b.onclick = (ev) => {
+            ev.stopPropagation();
+            // toggle reaction badge count near the emoji
+            if (!b.dataset.count) b.dataset.count = 0;
+            b.dataset.count = Number(b.dataset.count) + 1;
+            b.innerText = e + " " + b.dataset.count;
+            // optional: simple bot reaction when user reacts to a bot message
+            if (role === "bot" && role !== "user") {
+              setTimeout(() => botAddReactionToMessage(wrap), 800);
+            }
+          };
+          reactions.appendChild(b);
+        });
+        wrap.appendChild(reactions);
+
+        // store chat to history
+        chatHistory.push({ role, text, ts: new Date().toISOString() });
+        saveState();
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return wrap;
+      }
+
+      /* bot sometimes adds a small emoji reaction to user message */
+      function botAddReactionToMessage(messageEl) {
+        const small = document.createElement("div");
+        small.style.position = "absolute";
+        small.style.right = "-28px";
+        small.style.top = "6px";
+        const pool = PERSONALITIES[currentPersonality].reactPool;
+        small.innerText = pool[Math.floor(Math.random() * pool.length)];
+        messageEl.appendChild(small);
+      }
+
+      /* show typing indicator */
+      function showTyping() {
+        const node = document.createElement("div");
+        node.className = "msg bot typing";
+        node.innerHTML = `<div class="typing"><div>Bot is typing</div><div style="display:flex"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+        messagesEl.appendChild(node);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return node;
+      }
+
+      /* simple NLU: detect commands, memory ops, greetings */
+      function interpretInput(text) {
+        const low = text.toLowerCase();
+        // memory set: "remember: ..." or "remember that ..."
+        const memMatch = low.match(/remember(?:\:|\sthat)?\s(.+)/i);
+        if (memMatch) return { type: "remember", payload: memMatch[1].trim() };
+
+        if (
+          low.startsWith("forget") ||
+          low.startsWith("clear memory") ||
+          low.startsWith("forget that")
+        )
+          return { type: "forget" };
+        if (low.includes("joke")) return { type: "joke" };
+        if (low.includes("help")) return { type: "help" };
+        if (
+          low.includes("what did i say") ||
+          low.includes("what do you remember")
+        )
+          return { type: "recall" };
+        return { type: "chat", payload: text };
+      }
+
+      /* generate a contextual reply using memory + personality */
+      function generateReply(parsed) {
+        const persona = PERSONALITIES[currentPersonality];
+        const p = (s) => persona.prefix(s);
+
+        if (parsed.type === "remember") {
+          memory.push({
+            role: "user",
+            text: parsed.payload,
+            ts: new Date().toISOString(),
+          });
+          // keep memory limited
+          if (memory.length > MAX_MEMORY)
+            memory = memory.slice(memory.length - MAX_MEMORY);
+          saveState();
+          return p("Got it — I'll remember that.");
+        }
+        if (parsed.type === "forget") {
+          memory = [];
+          saveState();
+          return p("Okay — memory cleared.");
+        }
+        if (parsed.type === "joke") {
+          const jokes = {
+            fun: "Why did the developer go broke? Because he used up all his cache! 😂",
+            sarcastic:
+              "A joke? Sure. Why did the meeting end early? Because everyone realized it could be an email.",
+            formal:
+              "Here's a light joke: Why did the computer show up at work late? Network issues.",
+            geeky:
+              "Why do programmers prefer dark mode? Because light attracts bugs. 🐛",
+          };
+          return p(jokes[currentPersonality] || jokes.fun);
+        }
+        if (parsed.type === "recall") {
+          if (memory.length === 0)
+            return p("I don't have anything stored yet.");
+          // produce a short summary referencing memory
+          const last = memory[memory.length - 1];
+          return p(
+            `You asked me to remember: "${last.text}". I have ${memory.length} item(s) stored.`
+          );
+        }
+        if (parsed.type === "help") {
+          return p(
+            "Try 'remember: X' to store a note, ask for a joke, or switch personality from the left."
+          );
+        }
+        // general chat: we attempt to produce contextual reply using keywords and memory reference
+        const text = parsed.payload;
+        // quick keyword matching
+        const kw = (w) => text.toLowerCase().includes(w);
+        if (kw("meeting") || kw("meetings"))
+          return p(
+            "Meetings — the modern ritual. Want a joke or a tip to survive them?"
+          );
+        if (kw("coffee") || kw("chai")) {
+          // if memory mentions user likes something, mention it
+          const like = memory.find(
+            (m) =>
+              m.text.toLowerCase().includes("love") ||
+              m.text.toLowerCase().includes("like")
+          );
+          const ref = like ? `Also, you previously said: "${like.text}".` : "";
+          return p(
+            "Coffee/Chai powered answers: take a break every 90 minutes. " + ref
+          );
+        }
+
+        // if memory contains something related, reference it sometimes
+        if (memory.length && Math.random() < 0.35) {
+          const m = memory[Math.floor(Math.random() * memory.length)];
+          return p(
+            `Quick reminder based on earlier: "${m.text}". What would you like me to do with that?`
+          );
+        }
+
+        // fallback using personality replies (mix)
+        const replyPool = persona.replies;
+        return p(replyPool[Math.floor(Math.random() * replyPool.length)]);
+      }
+
+      /* main send flow */
+      async function sendMessage() {
+        const text = textEl.value.trim();
+        if (!text) return;
+        appendMessage("user", text);
+        textEl.value = "";
+        const parsed = interpretInput(text);
+
+        // show typing indicator
+        const typingNode = showTyping();
+        // realistic delay base on message length
+        const delay =
+          500 +
+          Math.min(2200, text.length * 25) +
+          Math.floor(Math.random() * 600);
+        await new Promise((r) => setTimeout(r, delay));
+
+        // remove typing and show bot reply
+        typingNode.remove();
+
+        const botText = generateReply(parsed);
+        const botNode = appendMessage("bot", botText);
+
+        // sometimes bot adds a reaction to recent user message
+        if (Math.random() < 0.4) {
+          setTimeout(() => {
+            // attach to last user message element, find last '.user'
+            const userMsgs = Array.from(document.querySelectorAll(".msg.user"));
+            const last = userMsgs[userMsgs.length - 1];
+            if (last) botAddReactionToMessage(last);
+          }, 400);
+        }
+
+        // if parsed type was 'remember', we've already saved memory. If general chat, optionally update memory heuristically
+        if (
+          parsed.type === "chat" &&
+          text.length < 120 &&
+          Math.random() < 0.12
+        ) {
+          // store a short memory of user preference/statement
+          memory.push({
+            role: "user",
+            text: text.slice(0, 180),
+            ts: new Date().toISOString(),
+          });
+          if (memory.length > MAX_MEMORY)
+            memory = memory.slice(memory.length - MAX_MEMORY);
+          saveState();
+        }
+
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      /* wire up UI events */
+      sendBtn.addEventListener("click", sendMessage);
+      textEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendMessage();
+      });
+
+      personalityEl.addEventListener("change", (e) => {
+        currentPersonality = e.target.value;
+        modeBadge.innerText =
+          "Mode: " + PERSONALITIES[currentPersonality].label;
+        statusNote.innerHTML = `You are in <strong>${PERSONALITIES[currentPersonality].label}</strong> mode.`;
+      });
+
+      /* clear and export */
+      clearMemoryBtn.onclick = () => {
+        if (!confirm("Clear memory? This will erase stored items.")) return;
+        memory = [];
+        saveState();
+        appendMessage(
+          "bot",
+          PERSONALITIES[currentPersonality].prefix("Memory cleared.")
+        );
+      };
+      exportChatBtn.onclick = () => {
+        const txt = chatHistory.map((m) => `[${m.role}] ${m.text}`).join("\n");
+        navigator.clipboard
+          .writeText(txt)
+          .then(() => alert("Chat copied to clipboard."));
+      };
+
+      /* theme switch */
+      themeSelect.addEventListener("change", (e) => {
+        const v = e.target.value;
+        document.getElementById("app").className = ""; // no-op but kept for extension
+        // apply class to leftPanel for theme coloring
+        if (v === "corp") {
+          leftPanel.classList.remove("theme-dark");
+          leftPanel.classList.add("theme-corp");
+          document.body.style.background = "";
+        } else if (v === "dark") {
+          leftPanel.classList.remove("theme-corp");
+          leftPanel.classList.add("theme-dark");
+          document.body.style.background = "var(--bg)";
+        } else {
+          leftPanel.classList.remove("theme-dark");
+          leftPanel.classList.add("theme-corp");
+        }
+      });
+
+      /* restore previous chat if any */
+      function restoreChat() {
+        if (!chatHistory || chatHistory.length === 0) {
+          appendMessage(
+            "bot",
+            'Hi! I\'m BrowserBot 🤖 — try "remember: I love chai" or ask me for a joke.'
+          );
+          return;
+        }
+        chatHistory.forEach((m) => {
+          appendMessage(m.role, m.text);
+        });
+      }
+
+      /* init */
+      renderMemory();
+      restoreChat();
+
+      /* convenience: focus input */
+      textEl.focus();
+    </script>
+  </body>
+</html>

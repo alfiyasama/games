@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Dino Runner</title>
+    <style>
+      body {
+        background: #f7f7f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        font-family: Arial;
+      }
+      canvas {
+        background: #fff;
+        border: 2px solid #333;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      }
+      .info {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        color: #333;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="info">Space / ↑ to jump — Survive as long as you can!</div>
+    <canvas id="c" width="800" height="200"></canvas>
+    <script>
+      const c = document.getElementById("c"),
+        ctx = c.getContext("2d");
+      let groundY = 160,
+        speed = 6,
+        score = 0,
+        gameOver = false;
+
+      const dino = {
+        x: 50,
+        y: groundY - 40,
+        w: 40,
+        h: 40,
+        vy: 0,
+        gravity: 0.9,
+        jump: -16,
+        onGround: true,
+      };
+      let obstacles = [];
+
+      function spawnObstacle() {
+        const h = 20 + Math.random() * 30;
+        obstacles.push({
+          x: c.width + 20,
+          y: groundY - h,
+          w: 20 + Math.random() * 20,
+          h,
+        });
+      }
+      setInterval(spawnObstacle, 1400);
+
+      function update() {
+        if (gameOver) return;
+        // dino physics
+        dino.vy += dino.gravity;
+        dino.y += dino.vy;
+        if (dino.y > groundY - dino.h) {
+          dino.y = groundY - dino.h;
+          dino.vy = 0;
+          dino.onGround = true;
+        }
+
+        // move obstacles
+        for (let i = obstacles.length - 1; i >= 0; --i) {
+          obstacles[i].x -= speed;
+          if (obstacles[i].x + obstacles[i].w < 0) {
+            obstacles.splice(i, 1);
+            score += 1;
+          }
+        }
+
+        // collision
+        for (let o of obstacles) {
+          if (
+            dino.x < o.x + o.w &&
+            dino.x + dino.w > o.x &&
+            dino.y < o.y + o.h &&
+            dino.y + dino.h > o.y
+          ) {
+            gameOver = true;
+          }
+        }
+
+        // increase difficulty
+        if (score && score % 10 === 0) speed = 6 + Math.floor(score / 10);
+
+        draw();
+        requestAnimationFrame(update);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, c.width, c.height);
+        // ground
+        ctx.fillStyle = "#222";
+        ctx.fillRect(0, groundY, c.width, 4);
+        // dino
+        ctx.fillStyle = "#4caf50";
+        ctx.fillRect(dino.x, dino.y, dino.w, dino.h);
+        // obstacles
+        ctx.fillStyle = "#9e2a2b";
+        for (let o of obstacles) ctx.fillRect(o.x, o.y, o.w, o.h);
+        // score
+        ctx.fillStyle = "#333";
+        ctx.font = "18px Arial";
+        ctx.fillText("Score: " + score, c.width - 120, 30);
+
+        if (gameOver) {
+          ctx.fillStyle = "rgba(0,0,0,0.6)";
+          ctx.fillRect(0, 0, c.width, c.height);
+          ctx.fillStyle = "#fff";
+          ctx.font = "28px Arial";
+          ctx.fillText("Game Over — Press R to restart", 200, 100);
+        }
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (
+          (e.code === "Space" || e.code === "ArrowUp") &&
+          dino.onGround &&
+          !gameOver
+        ) {
+          dino.vy = dino.jump;
+          dino.onGround = false;
+        }
+        if (e.key.toLowerCase() === "r" && gameOver) {
+          obstacles = [];
+          score = 0;
+          speed = 6;
+          gameOver = false;
+          dino.y = groundY - dino.h;
+          requestAnimationFrame(update);
+        }
+      });
+
+      requestAnimationFrame(update);
+    </script>
+  </body>
+</html>
